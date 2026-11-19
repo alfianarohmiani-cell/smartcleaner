@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -15,10 +18,23 @@ jobs:
       - name: Install
         run: pip install pyinstaller send2trash pillow
       - name: Tes jendela aplikasi
-        run: python -c "import smartscan as s; a=s.App(); a.update(); a.tree_exact.insert('', 'end', text='tes'); a.refresh(); a.update(); a.destroy(); print('GUI OK')"
-      - name: Build
-        run: pyinstaller --onefile --windowed --name SmartScan smartscan.py
+        run: python -c "import smartscan as s; a=s.App(); a.update(); a.refresh(); a.update(); a.destroy(); print('GUI OK')"
+      - name: Build (folder, bukan onefile - lebih jarang diblokir antivirus)
+        run: pyinstaller --onedir --windowed --noupx --name SmartScan --version-file version_info.txt smartscan.py
+      - name: Zip
+        shell: pwsh
+        run: |
+          Copy-Item README.md dist/SmartScan/BACA-SAYA.md
+          Compress-Archive -Path dist/SmartScan -DestinationPath SmartScan-Windows.zip
       - uses: actions/upload-artifact@v4
         with:
           name: SmartScan-Windows
-          path: dist/SmartScan.exe
+          path: SmartScan-Windows.zip
+      - name: Terbitkan ke halaman Releases
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete terbaru -y --cleanup-tag || true
+          gh release create terbaru SmartScan-Windows.zip --title "Smart Scan File Dobel (versi terbaru)" --notes "Unduh SmartScan-Windows.zip, ekstrak, lalu jalankan SmartScan.exe di dalam folder SmartScan."
