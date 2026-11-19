@@ -1,0 +1,22 @@
+name: Build SmartScan.exe
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install pyinstaller send2trash pillow
+      - name: Build
+        run: pyinstaller --onefile --windowed --name SmartScan smartscan.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmartScan-Windows
+          path: dist/SmartScan.exe
